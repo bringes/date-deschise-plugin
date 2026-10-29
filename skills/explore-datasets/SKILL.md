@@ -49,7 +49,9 @@ Then use the first of these that applies:
   Python package. If neither is installed or the version is below 2.0, install it with what the
   machine already uses — `pip install "duckdb>=2.0"`, `brew install duckdb` or
   `winget install DuckDB.cli`. Ask the user before installing anything. Always pass `-c` to the CLI:
-  a bare `duckdb` waits on stdin, which from a tool call looks like a hang.
+  a bare `duckdb` waits on stdin, which from a tool call looks like a hang. The 2.0 CLI switches to
+  an "agent mode" output format when it detects an agent; pass `-json` or `-csv` for a format you
+  choose, or `-no-agent` for the usual tables.
 - **A code sandbox whose network is restricted** (code execution in a chat app): `pip install duckdb`
   usually works there, but the bucket may be blocked, which shows up as a proxy 403, a DNS failure
   or "host not allowed". Tell the user that querying needs `date-deschise.bunnytech.app` and

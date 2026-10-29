@@ -22,6 +22,7 @@
     --series-2: #eb6834;
     --series-3: #1baf7a;
     --series-4: #6250d6;
+    --mark-muted: #c9c8c2;
     --good: #0f7a3d;
     --bad: #c2332f;
   }
@@ -40,6 +41,7 @@
       --series-2: #d95926;
       --series-3: #199e70;
       --series-4: #9085e9;
+      --mark-muted: #4a4945;
       --good: #4cc27c;
       --bad: #e66767;
     }
@@ -58,6 +60,7 @@
     --series-2: #d95926;
     --series-3: #199e70;
     --series-4: #9085e9;
+    --mark-muted: #4a4945;
     --good: #4cc27c;
     --bad: #e66767;
   }
@@ -97,6 +100,8 @@
   .kpi-value { font-size: 28px; font-weight: 650; letter-spacing: -.01em; }
   .kpi-note { font-size: 12px; color: var(--text-muted); }
 
+  .findings { margin: 0; padding: 16px 16px 16px 36px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-1); display: grid; gap: 6px; color: var(--text-secondary); }
+  .findings:empty { display: none; }
   .figure { margin: 0; padding: 20px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-1); display: grid; gap: 12px; min-width: 0; }
   .figure-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 8px 16px; }
   .figure-head > div:first-child { flex: 1 1 260px; min-width: 0; }
@@ -151,6 +156,7 @@
     </p>
   </header>
   <section class="kpis" id="kpis" aria-label="Key figures"></section>
+  <ul class="findings" id="findings"></ul>
   <div id="figures" style="display:grid;gap:24px"></div>
   <section class="method">
     <h2 id="method-title"></h2>
@@ -199,6 +205,12 @@ const REPORT = {
     },
   ],
   method: 'Each figure is one SQL query against the Date deschise lakehouse. Rates are rate_per_unit (RON for one unit of the currency), averaged over every banking day in the period.',
+
+  // Optional: two to four sentences, each a finding with its number. Leave [] for none.
+  findings: [
+    'The euro’s monthly average stayed between 4.42 and 4.98 lei from January 2015 to April 2025, first passed 5.00 in May 2025, and reached 5.34 in October 2026.',
+    'The dollar swung far more: it peaked at 5.01 lei in October 2022, fell to 4.31 by February 2026, and is back at 4.77.',
+  ],
 
   kpis: [
     { label: 'EUR/RON, latest month', from: 'monthly', value: (r) => r.at(-1).eur, digits: 4, note: (r) => 'average for ' + r.at(-1).month },
@@ -317,6 +329,10 @@ function renderKpis() {
   }).join('');
 }
 
+function renderFindings() {
+  $('findings').innerHTML = (REPORT.findings || []).map((t) => '<li>' + esc(t) + '</li>').join('');
+}
+
 function figureShell(f) {
   const chips = (f.ranges || []).map((r, i) =>
     '<button type="button" data-range="' + i + '" aria-pressed="' + (i === f.ranges.length - 1) + '">' + esc(r.label) + '</button>').join('');
@@ -349,6 +365,7 @@ function renderFigure(f) {
     body.innerHTML = tableHtml(f);
     return;
   }
+  if (f.kind === 'bar') body.style.height = Math.max(160, visibleRows(f).length * 26 + 48) + 'px';
   const chart = charts.get(f.id) || echarts.init(body, null, { renderer: 'svg' });
   charts.set(f.id, chart);
   chart.setOption(f.kind === 'bar' ? barOption(f) : lineOption(f), true);
@@ -417,9 +434,11 @@ function barOption(f) {
     series: [{
       name: s.label,
       type: 'bar',
-      data: rows.map((r) => r[s.key]),
+      data: rows.map((r) => ({
+        value: r[s.key],
+        itemStyle: { color: !f.highlight || f.highlight.includes(r[f.x]) ? token('--series-1') : token('--mark-muted') },
+      })),
       barMaxWidth: 18,
-      color: token('--series-1'),
       itemStyle: { borderRadius: [0, 4, 4, 0] },
       label: { show: rows.length <= 15, position: 'right', color: token('--text-secondary'), fontSize: 11, formatter: (p) => fmt(p.value, f) },
     }],
@@ -574,6 +593,7 @@ async function refresh() {
 /* ---- Boot ----------------------------------------------------------------- */
 
 renderHeader();
+renderFindings();
 $('figures').innerHTML = REPORT.figures.map(figureShell).join('');
 renderAll();
 renderMethod();

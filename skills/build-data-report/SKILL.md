@@ -70,6 +70,8 @@ language changes):
 - `asOf`: the dataset's "data as of" date from its page, or `lastIngestAt` in `index.json`.
 - `sources`: per dataset, its id, name, licence, licence URL and attribution, **copied exactly**
   from the dataset's `llms.txt`.
+- `findings`: optional, two to four sentences, each a finding with its number. Take every number
+  from the rows, not from your reading of the chart.
 - `kpis`: three or four numbers that carry the story. Each one is computed from a figure's rows, so
   a live refresh updates it too.
 - `figures`: each one has an `id`, a `kind`, a `title`, an optional `subtitle` (the unit) and
@@ -77,7 +79,8 @@ language changes):
   - `line`: `x` plus up to four `series` (`{key, label}`). Optional `ranges` chips
     (`{label, last: n}`) re-slice the embedded rows, which is instant and works in a sandbox.
   - `bar`: a horizontal ranking from `x` and one series, sorted descending, labelled when there are
-    15 bars or fewer.
+    15 bars or fewer. `highlight: ['EUR']` keeps the named bars in the series colour and greys the
+    rest. Use it to point at the entity the story is about, never a status colour.
   - `table`: `columns` (`{key, label, digits}`). Numbers are right-aligned in tabular figures.
 - `lang` and `locale`: write the page in the reader's language. For a Romanian reader use `'ro'` and
   `'ro-RO'` (`1.234,56`) and translate the `UI` strings with it. Keep SQL, column keys and dataset
@@ -150,8 +153,9 @@ the cross-origin reads the data arrives on.
 Do every step. Each catches a failure that has happened before:
 
 1. **Open it in a real browser** (or a headless one) and read the console. Zero errors.
-2. **Re-derive every number in the title, lede and KPIs** from the rows and compare them with your
-   query output. A headline written before the final query is the most common wrong number.
+2. **Re-derive every number in the title, lede, findings and KPIs** from the rows and compare them
+   with your query output. A headline written before the final query, or read off the chart by eye,
+   is the most common wrong number.
 3. **Check the footer.** Licence and attribution match the dataset page character for character,
    and the as-of date is right.
 4. **Check both themes and a 375px width.** No horizontal page scroll, no clipped labels, and a
