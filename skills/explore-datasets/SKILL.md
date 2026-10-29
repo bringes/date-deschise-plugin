@@ -26,7 +26,7 @@ checked, cited answer. When the answer has more than about five numbers, finish 
 | Every dataset, one line each, and how the directory works | `https://date-deschise.bunnytech.app/llms.txt` |
 | One dataset in full — tables, every column, sort order, licence, SQL known to run | `https://date-deschise.bunnytech.app/datasets/<id>/llms.txt` |
 | The catalogue as JSON — ids, tables, row counts, last ingest | `https://date-deschise-s3.bunnytech.app/public/index.json` |
-| The whole directory as one DuckLake catalog | `ducklake:https://date-deschise-s3.bunnytech.app/catalog/catalog.ducklake` |
+| The whole directory as one DuckLake catalog | `ducklake:https://date-deschise.bunnytech.app/datadirectory.ducklake` |
 | A browser SQL console over every dataset | `https://date-deschise.bunnytech.app/playground?sql=<url-encoded SQL>` |
 | The in-depth query guide (time travel, whole-catalogue search, maps) | `https://date-deschise.bunnytech.app/skills/query-datasets/SKILL.md` |
 
@@ -39,19 +39,25 @@ You need **DuckDB 2.0 or newer**. The catalog is written by DuckDB 2.0, and 1.x 
 it fails with a storage-version error that looks like a corrupt file. Check before anything else:
 
 ```bash
-duckdb -c "SELECT version()"                                # CLI
+duckdb -agent -c "SELECT version()"                         # CLI
 python3 -c "import duckdb; print(duckdb.__version__)"       # Python
 ```
 
 Then use the first of these that applies:
 
 - **A shell with network access** (Claude Code, Codex, Cowork, a terminal): use the DuckDB CLI or
-  Python package. If neither is installed or the version is below 2.0, install it with what the
-  machine already uses — `pip install "duckdb>=2.0"`, `brew install duckdb` or
-  `winget install DuckDB.cli`. Ask the user before installing anything. Always pass `-c` to the CLI:
-  a bare `duckdb` waits on stdin, which from a tool call looks like a hang. The 2.0 CLI switches to
-  an "agent mode" output format when it detects an agent; pass `-json` or `-csv` for a format you
-  choose, or `-no-agent` for the usual tables.
+  Python package. If neither is installed or the version is below 2.0, install the latest stable
+  CLI with DuckDB's own installer — `curl https://install.duckdb.org | bash`, then
+  `export PATH="$HOME/.duckdb/cli/latest:$PATH"` so it wins over an older Homebrew or apt copy
+  (Windows: `winget install DuckDB.cli`; Python: `pip install -U "duckdb>=2.0"`). Ask the user before
+  installing anything. **Call it as `duckdb -agent -c "<sql>"`**: a bare `duckdb` waits on stdin,
+  which from a tool call looks like a hang, and `-agent` prints capped markdown tables with a row
+  count and a result hash, and errors as JSON. Any output flag (`-json`, `-csv`, `-markdown`)
+  switches agent mode off, so add one only to write a file another program will parse.
+- **Then use DuckDB 2.0 to the full.** Read the "Use DuckDB v2.0 to the full" section of the live
+  `llms.txt`: how to ask the engine what it can do (`duckdb_functions()` has descriptions and
+  examples), the DuckDB SQL that keeps queries short, and how to keep each query cheap. One trap to
+  know now: 2.0 refuses the `x -> x + 1` lambda arrow; write `lambda x: x + 1`.
 - **A code sandbox whose network is restricted** (code execution in a chat app): `pip install duckdb`
   usually works there, but the bucket may be blocked, which shows up as a proxy 403, a DNS failure
   or "host not allowed". Tell the user that querying needs `date-deschise.bunnytech.app` and
@@ -79,7 +85,7 @@ scans every column of every table in a few seconds.
 
 ```sql
 INSTALL ducklake; LOAD ducklake; INSTALL httpfs; LOAD httpfs;
-ATTACH 'ducklake:https://date-deschise-s3.bunnytech.app/catalog/catalog.ducklake'
+ATTACH 'ducklake:https://date-deschise.bunnytech.app/datadirectory.ducklake'
   AS datadirectory (READ_ONLY);
 SELECT schema_name, table_name
 FROM duckdb_tables() WHERE database_name = 'datadirectory' ORDER BY 1, 2;

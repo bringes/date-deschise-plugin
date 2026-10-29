@@ -43,9 +43,9 @@ codex plugin marketplace add bringes/date-deschise-plugin
 
 Then install **Date deschise** from the Plugins directory in the Codex app or ChatGPT desktop app.
 
-Querying needs **DuckDB 2.0 or newer**: the CLI (`brew install duckdb`,
+Querying needs **DuckDB 2.0 or newer**: the CLI (`curl https://install.duckdb.org | bash`,
 `winget install DuckDB.cli`) or the Python package (`pip install "duckdb>=2.0"`). The agent checks
-the version and asks before installing anything.
+the version, asks before installing anything, and runs the CLI in agent mode (`duckdb -agent`).
 
 ## What it reads, runs and sends
 

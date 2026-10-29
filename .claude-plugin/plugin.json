@@ -1,7 +1,7 @@
 {
   "name": "date-deschise",
   "displayName": "Date deschise",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Explore 30+ Romanian open datasets (companies, budgets, procurement, elections, energy, air quality, INS and Eurostat statistics) with DuckDB SQL over public HTTPS, and turn the answers into professional, sourced reports with duckdb-wasm.",
   "author": {
     "name": "Bringes",

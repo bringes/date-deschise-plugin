@@ -48,10 +48,11 @@ so a local file or a page on any normal website **can** refresh live.
 - **Write tables as `datadirectory.<dataset>.<table>`, one statement per figure.** The same string
   then runs in the DuckDB CLI after the `ATTACH`, in the playground link and in the page's live
   refresh. Use no `ATTACH`, macro or temp view inside it.
-- **Produce `rows` by running exactly that SQL** and pasting the JSON verbatim:
+- **Produce `rows` by running exactly that SQL** and pasting the JSON verbatim. `-json` here on
+  purpose, because the output is data for the page; explore with `duckdb -agent -c` instead:
 
   ```bash
-  duckdb -json -c "ATTACH 'ducklake:https://date-deschise-s3.bunnytech.app/catalog/catalog.ducklake' AS datadirectory (READ_ONLY);
+  duckdb -json -c "ATTACH 'ducklake:https://date-deschise.bunnytech.app/datadirectory.ducklake' AS datadirectory (READ_ONLY);
                    <the figure's SQL>"
   ```
 
