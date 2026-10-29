@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Date deschise">
+  <rect width="512" height="512" rx="112" fill="#256ABF"/>
+  <g fill="#FFFFFF">
+    <rect x="112" y="280" width="64" height="120" rx="14"/>
+    <rect x="224" y="200" width="64" height="200" rx="14"/>
+    <rect x="336" y="120" width="64" height="280" rx="14"/>
+  </g>
+  <path d="M112 216 L232 136 L312 168 L408 88" fill="none" stroke="#9EC5F4" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

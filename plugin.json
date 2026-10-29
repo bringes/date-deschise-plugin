@@ -1,0 +1,48 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "date-deschise",
+  "version": "0.1.0",
+  "description": "Explore 30+ Romanian open datasets (companies, budgets, procurement, elections, energy, air quality, INS and Eurostat statistics) with DuckDB SQL over public HTTPS, and turn the answers into professional, sourced reports with duckdb-wasm.",
+  "author": {
+    "name": "Bringes",
+    "email": "hello@bunnytech.app",
+    "url": "https://date-deschise.bunnytech.app"
+  },
+  "homepage": "https://date-deschise.bunnytech.app",
+  "repository": "https://github.com/bringes/date-deschise-plugin",
+  "license": "MIT",
+  "keywords": [
+    "open-data",
+    "romania",
+    "duckdb",
+    "duckdb-wasm",
+    "ducklake",
+    "sql",
+    "statistics",
+    "data-analysis",
+    "reports",
+    "dashboards"
+  ],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Date deschise",
+        "shortDescription": "Romanian open data, in SQL",
+        "longDescription": "Ask questions of Romania's public data and get answers you can check. Date deschise publishes 30+ datasets as sorted Parquet plus one DuckLake catalog on a public bucket: the company register, public budget execution, procurement, elections, the power grid, exchange rates, air quality, INS TEMPO and Eurostat statistics, and more. This plugin teaches the agent the route — read the dataset's own page, query it with DuckDB over plain HTTPS (no API key, no account), scan rather than sample, and cite the dataset, licence, SQL and as-of date behind every number. When an answer has more than a handful of numbers, it builds a polished, self-contained HTML report with charts, a query link behind every figure, CSV/JSON downloads, and optional live refresh through duckdb-wasm.",
+        "developerName": "Bringes",
+        "category": "Research",
+        "capabilities": ["Read", "Write"],
+        "websiteURL": "https://date-deschise.bunnytech.app",
+        "defaultPrompt": [
+          "How has the EUR/RON exchange rate moved since 2015? Build me a report.",
+          "Which Romanian public institutions spent the most last year?",
+          "What datasets do you have about air quality in Bucharest?"
+        ],
+        "brandColor": "#256ABF",
+        "composerIcon": "./assets/icon.svg",
+        "logo": "./assets/logo.svg",
+        "screenshots": []
+      }
+    }
+  }
+}

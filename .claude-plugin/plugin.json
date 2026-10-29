@@ -1,0 +1,26 @@
+{
+  "name": "date-deschise",
+  "displayName": "Date deschise",
+  "version": "0.1.0",
+  "description": "Explore 30+ Romanian open datasets (companies, budgets, procurement, elections, energy, air quality, INS and Eurostat statistics) with DuckDB SQL over public HTTPS, and turn the answers into professional, sourced reports with duckdb-wasm.",
+  "author": {
+    "name": "Bringes",
+    "email": "hello@bunnytech.app",
+    "url": "https://date-deschise.bunnytech.app"
+  },
+  "homepage": "https://date-deschise.bunnytech.app",
+  "repository": "https://github.com/bringes/date-deschise-plugin",
+  "license": "MIT",
+  "keywords": [
+    "open-data",
+    "romania",
+    "duckdb",
+    "duckdb-wasm",
+    "ducklake",
+    "sql",
+    "statistics",
+    "data-analysis",
+    "reports",
+    "dashboards"
+  ]
+}

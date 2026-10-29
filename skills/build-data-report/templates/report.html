@@ -1,0 +1,586 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>The leu against the euro and the dollar</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js" integrity="sha384-Mx5lkUEQPM1pOJCwFtUICyX45KNojXbkWdYhkKUKsbv391mavbfoAmONbzkgYPzR" crossorigin="anonymous"></script>
+<style>
+  /* Tokens. Every colour on the page is one of these, so light and dark swap in one place. */
+  :root {
+    color-scheme: light;
+    --surface-0: #f4f4f2;
+    --surface-1: #fcfcfb;
+    --border: #e3e2de;
+    --grid: #ecebe7;
+    --text-primary: #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted: #77766f;
+    --accent: #256abf;
+    --series-1: #2a78d6;
+    --series-2: #eb6834;
+    --series-3: #1baf7a;
+    --series-4: #6250d6;
+    --good: #0f7a3d;
+    --bad: #c2332f;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --surface-0: #121211;
+      --surface-1: #1a1a19;
+      --border: #2e2e2b;
+      --grid: #262624;
+      --text-primary: #f0efec;
+      --text-secondary: #c3c2b7;
+      --text-muted: #9a998f;
+      --accent: #6da7ec;
+      --series-1: #3987e5;
+      --series-2: #d95926;
+      --series-3: #199e70;
+      --series-4: #9085e9;
+      --good: #4cc27c;
+      --bad: #e66767;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --surface-0: #121211;
+    --surface-1: #1a1a19;
+    --border: #2e2e2b;
+    --grid: #262624;
+    --text-primary: #f0efec;
+    --text-secondary: #c3c2b7;
+    --text-muted: #9a998f;
+    --accent: #6da7ec;
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --series-4: #9085e9;
+    --good: #4cc27c;
+    --bad: #e66767;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--surface-0);
+    color: var(--text-primary);
+    font: 15px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .page { max-width: 1040px; margin: 0 auto; padding: 40px 16px 56px; display: grid; gap: 24px; }
+  .num { font-variant-numeric: tabular-nums; }
+
+  .masthead { display: grid; gap: 8px; }
+  .eyebrow { margin: 0; font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+  h1 { margin: 0; font-size: clamp(26px, 4vw, 34px); line-height: 1.15; font-weight: 680; letter-spacing: -.015em; text-wrap: balance; }
+  .lede { margin: 0; max-width: 68ch; font-size: 17px; color: var(--text-secondary); }
+  .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 4px 0 0; font-size: 13px; color: var(--text-muted); }
+  .badge { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface-1); color: var(--text-secondary); }
+  .badge::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--text-muted); }
+  .badge[data-mode="live"]::before { background: var(--good); }
+  .badge[data-mode="error"]::before { background: var(--bad); }
+
+  button, .menu > summary {
+    font: inherit; font-size: 13px; color: var(--text-primary); cursor: pointer;
+    padding: 4px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-1);
+  }
+  button:hover, .menu > summary:hover { border-color: var(--text-muted); }
+  button:focus-visible, .menu > summary:focus-visible, .menu a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  button[disabled] { opacity: .6; cursor: progress; }
+
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+  .kpi { padding: 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-1); display: grid; gap: 2px; }
+  .kpi-label { font-size: 13px; color: var(--text-secondary); }
+  .kpi-value { font-size: 28px; font-weight: 650; letter-spacing: -.01em; }
+  .kpi-note { font-size: 12px; color: var(--text-muted); }
+
+  .figure { margin: 0; padding: 20px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-1); display: grid; gap: 12px; min-width: 0; }
+  .figure-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 8px 16px; }
+  .figure-head > div:first-child { flex: 1 1 260px; min-width: 0; }
+  .figure h2 { margin: 0; font-size: 17px; font-weight: 640; }
+  .figure-sub { margin: 2px 0 0; font-size: 13px; color: var(--text-secondary); }
+  .figure-tools { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .chips { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .chips button { border: 0; border-radius: 0; padding: 4px 10px; }
+  .chips button + button { border-left: 1px solid var(--border); }
+  .chips button[aria-pressed="true"] { background: var(--text-primary); color: var(--surface-1); }
+  .chart { width: 100%; height: 340px; }
+  .figure figcaption { font-size: 12px; color: var(--text-muted); }
+
+  .menu { position: relative; }
+  .menu > summary { list-style: none; }
+  .menu > summary::-webkit-details-marker { display: none; }
+  .menu-list { position: absolute; right: 0; z-index: 10; margin-top: 6px; min-width: 230px; padding: 6px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-1); box-shadow: 0 8px 24px rgb(0 0 0 / .12); display: grid; }
+  .menu-list a { padding: 7px 10px; border-radius: 6px; color: var(--text-primary); text-decoration: none; font-size: 13px; }
+  .menu-list a:hover { background: var(--surface-0); }
+  .menu-sep { padding: 6px 10px 2px; font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; border-top: 1px solid var(--border); margin-top: 4px; }
+  .menu-sep:first-child { border-top: 0; margin-top: 0; }
+
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { padding: 8px 12px; border-bottom: 1px solid var(--grid); text-align: left; white-space: nowrap; }
+  th { font-size: 12px; font-weight: 600; color: var(--text-secondary); border-bottom-color: var(--border); }
+  td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
+  tbody tr:last-child td { border-bottom: 0; }
+
+  .method { display: grid; gap: 10px; padding-top: 8px; }
+  .method h2 { margin: 0; font-size: 17px; }
+  .method p { margin: 0; color: var(--text-secondary); max-width: 75ch; }
+  details.sql > summary { cursor: pointer; font-size: 13px; color: var(--text-secondary); }
+  pre { margin: 8px 0 0; padding: 12px; overflow-x: auto; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-0); font: 12.5px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+  footer { display: grid; gap: 4px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 12px; color: var(--text-muted); }
+  footer p { margin: 0; }
+  a { color: var(--accent); }
+  .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); padding: 8px 14px; border-radius: 8px; background: var(--text-primary); color: var(--surface-1); font-size: 13px; opacity: 0; transition: opacity .2s; pointer-events: none; }
+  .toast[data-show] { opacity: 1; }
+</style>
+</head>
+<body>
+<main class="page">
+  <header class="masthead">
+    <p class="eyebrow" id="eyebrow"></p>
+    <h1 id="title"></h1>
+    <p class="lede" id="lede"></p>
+    <p class="meta">
+      <span class="badge" id="mode" data-mode="embedded"></span>
+      <button type="button" id="refresh" hidden>Refresh from the lakehouse</button>
+    </p>
+  </header>
+  <section class="kpis" id="kpis" aria-label="Key figures"></section>
+  <div id="figures" style="display:grid;gap:24px"></div>
+  <section class="method">
+    <h2 id="method-title"></h2>
+    <p id="method-text"></p>
+    <div id="method-sql"></div>
+  </section>
+  <footer id="footer"></footer>
+</main>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ===========================================================================
+ * 1. WHERE THE DATA LIVES — change only when the directory moves.
+ *    ENGINE: copy the current values from the "In a browser: duckdb-wasm" section of
+ *    https://date-deschise.bunnytech.app/skills/query-datasets/SKILL.md
+ * ========================================================================= */
+const SITE = 'https://date-deschise.bunnytech.app';
+const CATALOG = 'https://date-deschise-s3.bunnytech.app/catalog/catalog.ducklake';
+const ENGINE = {
+  base: 'https://date-deschise-s3.bunnytech.app/public/duckdb-wasm/v2.0.0-fd1251452a6a-1.33.1-dev110.0/',
+  npm: '1.33.1-dev110.0',
+  wasm: 'duckdb-eh.wasm',
+  worker: 'duckdb-browser-eh.worker.js',
+};
+
+/* ===========================================================================
+ * 2. THE REPORT — the only part you write. Each figure's `sql` is the query you
+ *    ran, and `rows` is its result, pasted verbatim. The same SQL feeds the
+ *    playground link and the live refresh, so the three can never disagree.
+ * ========================================================================= */
+const REPORT = {
+  lang: 'en',
+  locale: 'en-GB', // number and date formatting: 'ro-RO' for a Romanian reader
+  live: true, // false inside a sandboxed viewer (a chat artifact): it cannot reach the bucket
+  eyebrow: 'Date deschise · Exchange rates',
+  title: 'A euro costs 19% more lei than in January 2015, and a dollar 23% more',
+  lede: 'Monthly averages of the National Bank of Romania’s daily reference rates, January 2015 to date. Higher means a weaker leu.',
+  asOf: '2026-10-29',
+  sources: [
+    {
+      dataset: 'bnr-exchange-rates',
+      name: 'BNR exchange rates',
+      license: 'BNR Termeni și condiții — redistribution permitted with attribution',
+      licenseUrl: 'https://www.bnr.ro/2281-termeni-si-conditii',
+      attribution: 'Exchange rates: Banca Națională a României (BNR).',
+    },
+  ],
+  method: 'Each figure is one SQL query against the Date deschise lakehouse. Rates are rate_per_unit (RON for one unit of the currency), averaged over every banking day in the period.',
+
+  kpis: [
+    { label: 'EUR/RON, latest month', from: 'monthly', value: (r) => r.at(-1).eur, digits: 4, note: (r) => 'average for ' + r.at(-1).month },
+    { label: 'EUR/RON since Jan 2015', from: 'monthly', value: (r) => r.at(-1).eur / r[0].eur - 1, style: 'percent', note: (r) => fmt(r[0].eur, { digits: 4 }) + ' → ' + fmt(r.at(-1).eur, { digits: 4 }) },
+    { label: 'USD/RON since Jan 2015', from: 'monthly', value: (r) => r.at(-1).usd / r[0].usd - 1, style: 'percent', note: (r) => fmt(r[0].usd, { digits: 4 }) + ' → ' + fmt(r.at(-1).usd, { digits: 4 }) },
+  ],
+
+  figures: [
+    {
+      id: 'monthly',
+      kind: 'line', // line | bar | table
+      title: 'RON per euro and per dollar, monthly average',
+      subtitle: 'RON for one unit of the currency',
+      caption: 'Monthly mean of BNR daily reference rates. The y-axis does not start at zero.',
+      x: 'month',
+      series: [ { key: 'eur', label: 'EUR' }, { key: 'usd', label: 'USD' } ],
+      digits: 4,
+      ranges: [ { label: '2 years', last: 24 }, { label: '5 years', last: 60 }, { label: 'All' } ],
+      sql: `SELECT strftime(date_trunc('month', rate_date), '%Y-%m') AS month,
+       round(avg(rate_per_unit) FILTER (WHERE currency = 'EUR'), 4)::DOUBLE AS eur,
+       round(avg(rate_per_unit) FILTER (WHERE currency = 'USD'), 4)::DOUBLE AS usd
+FROM datadirectory.bnr_exchange_rates.rates
+WHERE rate_date >= DATE '2015-01-01' AND currency IN ('EUR', 'USD')
+GROUP BY 1
+ORDER BY 1`,
+      rows: [{"month":"2015-01","eur":4.4877,"usd":3.869},{"month":"2015-02","eur":4.432,"usd":3.9017},{"month":"2015-03","eur":4.433,"usd":4.0933},{"month":"2015-04","eur":4.4166,"usd":4.0881},{"month":"2015-05","eur":4.4469,"usd":3.9843},{"month":"2015-06","eur":4.4682,"usd":3.9803},{"month":"2015-07","eur":4.4385,"usd":4.0315},{"month":"2015-08","eur":4.423,"usd":3.9724},{"month":"2015-09","eur":4.4232,"usd":3.9382},{"month":"2015-10","eur":4.422,"usd":3.9346},{"month":"2015-11","eur":4.4445,"usd":4.1356},{"month":"2015-12","eur":4.504,"usd":4.139},{"month":"2016-01","eur":4.5303,"usd":4.1702},{"month":"2016-02","eur":4.4818,"usd":4.0395},{"month":"2016-03","eur":4.4657,"usd":4.0201},{"month":"2016-04","eur":4.4727,"usd":3.9455},{"month":"2016-05","eur":4.4994,"usd":3.9802},{"month":"2016-06","eur":4.5218,"usd":4.0257},{"month":"2016-07","eur":4.4858,"usd":4.0529},{"month":"2016-08","eur":4.4594,"usd":3.9775},{"month":"2016-09","eur":4.4506,"usd":3.97},{"month":"2016-10","eur":4.4942,"usd":4.0756},{"month":"2016-11","eur":4.5102,"usd":4.171},{"month":"2016-12","eur":4.5173,"usd":4.282},{"month":"2017-01","eur":4.5016,"usd":4.2401},{"month":"2017-02","eur":4.512,"usd":4.2411},{"month":"2017-03","eur":4.5482,"usd":4.2563},{"month":"2017-04","eur":4.5299,"usd":4.2259},{"month":"2017-05","eur":4.554,"usd":4.1213},{"month":"2017-06","eur":4.5714,"usd":4.0714},{"month":"2017-07","eur":4.5681,"usd":3.9704},{"month":"2017-08","eur":4.5784,"usd":3.8764},{"month":"2017-09","eur":4.5978,"usd":3.8576},{"month":"2017-10","eur":4.5885,"usd":3.9035},{"month":"2017-11","eur":4.6314,"usd":3.9473},{"month":"2017-12","eur":4.6359,"usd":3.9186},{"month":"2018-01","eur":4.65,"usd":3.8121},{"month":"2018-02","eur":4.6555,"usd":3.7675},{"month":"2018-03","eur":4.6605,"usd":3.7784},{"month":"2018-04","eur":4.6565,"usd":3.7912},{"month":"2018-05","eur":4.6387,"usd":3.9239},{"month":"2018-06","eur":4.6611,"usd":3.9911},{"month":"2018-07","eur":4.6502,"usd":3.981},{"month":"2018-08","eur":4.6437,"usd":4.0189},{"month":"2018-09","eur":4.6466,"usd":3.9848},{"month":"2018-10","eur":4.6651,"usd":4.0609},{"month":"2018-11","eur":4.661,"usd":4.1028},{"month":"2018-12","eur":4.653,"usd":4.0868},{"month":"2019-01","eur":4.7037,"usd":4.1179},{"month":"2019-02","eur":4.7478,"usd":4.1823},{"month":"2019-03","eur":4.7538,"usd":4.2042},{"month":"2019-04","eur":4.7583,"usd":4.2296},{"month":"2019-05","eur":4.7595,"usd":4.2551},{"month":"2019-06","eur":4.7252,"usd":4.1839},{"month":"2019-07","eur":4.729,"usd":4.2144},{"month":"2019-08","eur":4.7286,"usd":4.2511},{"month":"2019-09","eur":4.7376,"usd":4.3026},{"month":"2019-10","eur":4.7538,"usd":4.3014},{"month":"2019-11","eur":4.7683,"usd":4.3139},{"month":"2019-12","eur":4.7773,"usd":4.2987},{"month":"2020-01","eur":4.7785,"usd":4.3059},{"month":"2020-02","eur":4.7828,"usd":4.3843},{"month":"2020-03","eur":4.8263,"usd":4.3633},{"month":"2020-04","eur":4.8342,"usd":4.4469},{"month":"2020-05","eur":4.8365,"usd":4.4398},{"month":"2020-06","eur":4.8393,"usd":4.2965},{"month":"2020-07","eur":4.838,"usd":4.2239},{"month":"2020-08","eur":4.8372,"usd":4.0881},{"month":"2020-09","eur":4.8586,"usd":4.1199},{"month":"2020-10","eur":4.8733,"usd":4.1412},{"month":"2020-11","eur":4.8699,"usd":4.1176},{"month":"2020-12","eur":4.8707,"usd":4.0005},{"month":"2021-01","eur":4.8728,"usd":4.0029},{"month":"2021-02","eur":4.8741,"usd":4.0289},{"month":"2021-03","eur":4.8878,"usd":4.1064},{"month":"2021-04","eur":4.9221,"usd":4.1188},{"month":"2021-05","eur":4.9247,"usd":4.0526},{"month":"2021-06","eur":4.9236,"usd":4.0864},{"month":"2021-07","eur":4.925,"usd":4.1652},{"month":"2021-08","eur":4.9229,"usd":4.1823},{"month":"2021-09","eur":4.9465,"usd":4.2019},{"month":"2021-10","eur":4.9481,"usd":4.2662},{"month":"2021-11","eur":4.9488,"usd":4.3345},{"month":"2021-12","eur":4.9489,"usd":4.3789},{"month":"2022-01","eur":4.9448,"usd":4.3681},{"month":"2022-02","eur":4.9456,"usd":4.361},{"month":"2022-03","eur":4.9481,"usd":4.4909},{"month":"2022-04","eur":4.9437,"usd":4.5638},{"month":"2022-05","eur":4.9462,"usd":4.6776},{"month":"2022-06","eur":4.9448,"usd":4.6756},{"month":"2022-07","eur":4.9398,"usd":4.8507},{"month":"2022-08","eur":4.8953,"usd":4.8344},{"month":"2022-09","eur":4.908,"usd":4.9531},{"month":"2022-10","eur":4.9266,"usd":5.014},{"month":"2022-11","eur":4.9131,"usd":4.8248},{"month":"2022-12","eur":4.9224,"usd":4.6477},{"month":"2023-01","eur":4.9227,"usd":4.569},{"month":"2023-02","eur":4.9077,"usd":4.5795},{"month":"2023-03","eur":4.9263,"usd":4.6031},{"month":"2023-04","eur":4.9364,"usd":4.5045},{"month":"2023-05","eur":4.9481,"usd":4.5546},{"month":"2023-06","eur":4.9598,"usd":4.5713},{"month":"2023-07","eur":4.9412,"usd":4.4689},{"month":"2023-08","eur":4.9409,"usd":4.5294},{"month":"2023-09","eur":4.9657,"usd":4.647},{"month":"2023-10","eur":4.9682,"usd":4.7027},{"month":"2023-11","eur":4.9702,"usd":4.6035},{"month":"2023-12","eur":4.9704,"usd":4.558},{"month":"2024-01","eur":4.9748,"usd":4.564},{"month":"2024-02","eur":4.9748,"usd":4.6097},{"month":"2024-03","eur":4.9709,"usd":4.5735},{"month":"2024-04","eur":4.973,"usd":4.634},{"month":"2024-05","eur":4.9758,"usd":4.6001},{"month":"2024-06","eur":4.9766,"usd":4.6235},{"month":"2024-07","eur":4.9729,"usd":4.5854},{"month":"2024-08","eur":4.9765,"usd":4.5199},{"month":"2024-09","eur":4.9743,"usd":4.478},{"month":"2024-10","eur":4.9748,"usd":4.5615},{"month":"2024-11","eur":4.976,"usd":4.6834},{"month":"2024-12","eur":4.9748,"usd":4.7475},{"month":"2025-01","eur":4.9752,"usd":4.8092},{"month":"2025-02","eur":4.977,"usd":4.78},{"month":"2025-03","eur":4.9768,"usd":4.6044},{"month":"2025-04","eur":4.9773,"usd":4.4408},{"month":"2025-05","eur":5.069,"usd":4.4923},{"month":"2025-06","eur":5.0468,"usd":4.3797},{"month":"2025-07","eur":5.072,"usd":4.3405},{"month":"2025-08","eur":5.0654,"usd":4.3562},{"month":"2025-09","eur":5.0737,"usd":4.3231},{"month":"2025-10","eur":5.0873,"usd":4.3705},{"month":"2025-11","eur":5.0868,"usd":4.4024},{"month":"2025-12","eur":5.0912,"usd":4.3473},{"month":"2026-01","eur":5.0924,"usd":4.3372},{"month":"2026-02","eur":5.0946,"usd":4.3078},{"month":"2026-03","eur":5.0959,"usd":4.4096},{"month":"2026-04","eur":5.0978,"usd":4.3616},{"month":"2026-05","eur":5.2313,"usd":4.4801},{"month":"2026-06","eur":5.2417,"usd":4.5524},{"month":"2026-07","eur":5.2378,"usd":4.5859},{"month":"2026-08","eur":5.2498,"usd":4.5288},{"month":"2026-09","eur":5.2555,"usd":4.5336},{"month":"2026-10","eur":5.3412,"usd":4.7698}],
+    },
+    {
+      id: 'yearly',
+      kind: 'table',
+      title: 'Year by year',
+      subtitle: 'Average, low and high of the daily EUR/RON rate; average USD/RON',
+      columns: [
+        { key: 'year', label: 'Year' },
+        { key: 'eur_avg', label: 'EUR avg', digits: 4 },
+        { key: 'eur_min', label: 'EUR low', digits: 4 },
+        { key: 'eur_max', label: 'EUR high', digits: 4 },
+        { key: 'usd_avg', label: 'USD avg', digits: 4 },
+        { key: 'banking_days', label: 'Banking days', digits: 0 },
+      ],
+      sql: `SELECT year(rate_date)::VARCHAR AS year,
+       round(avg(rate_per_unit) FILTER (WHERE currency = 'EUR'), 4)::DOUBLE AS eur_avg,
+       round(min(rate_per_unit) FILTER (WHERE currency = 'EUR'), 4)::DOUBLE AS eur_min,
+       round(max(rate_per_unit) FILTER (WHERE currency = 'EUR'), 4)::DOUBLE AS eur_max,
+       round(avg(rate_per_unit) FILTER (WHERE currency = 'USD'), 4)::DOUBLE AS usd_avg,
+       count(DISTINCT rate_date) AS banking_days
+FROM datadirectory.bnr_exchange_rates.rates
+WHERE rate_date >= DATE '2015-01-01' AND currency IN ('EUR', 'USD')
+GROUP BY 1
+ORDER BY 1 DESC`,
+      rows: [{"year":"2026","eur_avg":5.1887,"eur_min":5.0871,"eur_max":5.3527,"usd_avg":4.4839,"banking_days":187},{"year":"2025","eur_avg":5.0431,"eur_min":4.9728,"eur_max":5.1222,"usd_avg":4.4645,"banking_days":248},{"year":"2024","eur_avg":4.9746,"eur_min":4.9655,"eur_max":4.9773,"usd_avg":4.5975,"banking_days":252},{"year":"2023","eur_avg":4.9464,"eur_min":4.8858,"eur_max":4.9783,"usd_avg":4.5758,"banking_days":248},{"year":"2022","eur_avg":4.9313,"eur_min":4.8215,"eur_max":4.9492,"usd_avg":4.6923,"banking_days":251},{"year":"2021","eur_avg":4.9208,"eur_min":4.8691,"eur_max":4.9495,"usd_avg":4.163,"banking_days":254},{"year":"2020","eur_avg":4.8376,"eur_min":4.7642,"eur_max":4.875,"usd_avg":4.2413,"banking_days":251},{"year":"2019","eur_avg":4.7454,"eur_min":4.6634,"eur_max":4.7808,"usd_avg":4.2392,"banking_days":251},{"year":"2018","eur_avg":4.6535,"eur_min":4.6206,"eur_max":4.6695,"usd_avg":3.9433,"banking_days":249},{"year":"2017","eur_avg":4.568,"eur_min":4.4888,"eur_max":4.6597,"usd_avg":4.0517,"banking_days":249},{"year":"2016","eur_avg":4.49,"eur_min":4.4444,"eur_max":4.5411,"usd_avg":4.0569,"banking_days":254},{"year":"2015","eur_avg":4.4446,"eur_min":4.3965,"eur_max":4.5381,"usd_avg":4.0062,"banking_days":253}],
+    },
+  ],
+};
+
+/* Words the page itself prints. Translate these with the report for another language. */
+const UI = {
+  embedded: (d) => 'Embedded data · as of ' + d,
+  live: (t) => 'Live from the lakehouse · ' + t,
+  refreshing: 'Querying the lakehouse…',
+  unreachable: 'This viewer cannot reach the data bucket, so the embedded figures stay. They are correct as of the date shown.',
+  data: 'Data',
+  query: 'Query',
+  openQuery: 'Open the query in the playground',
+  copySql: 'Copy SQL',
+  download: (n) => 'Download · ' + n + ' rows',
+  copied: 'Copied',
+  downloadBlocked: 'This viewer blocks downloads, so the file was copied to the clipboard instead',
+  methodTitle: 'Method and sources',
+  sqlFor: (t) => 'SQL for “' + t + '”',
+  sourceLine: (s) => s.name + ' — ' + SITE + '/datasets/' + s.dataset,
+  footer: (d) => 'Built from Date deschise, Romanian open data queried with DuckDB. Data as of ' + d + '. Query links point at ' + SITE + '.',
+};
+
+/* ===========================================================================
+ * 3. RENDERING — generic. Edit only to add a chart kind.
+ * ========================================================================= */
+const $ = (id) => document.getElementById(id);
+const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+const token = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+const figureById = (id) => REPORT.figures.find((f) => f.id === id);
+
+function fmt(value, { digits = 0, style = 'decimal' } = {}) {
+  if (value === null || value === undefined || value === '') return '—';
+  if (typeof value !== 'number') return String(value);
+  const options = style === 'percent'
+    ? { style: 'percent', minimumFractionDigits: 1, maximumFractionDigits: 1, signDisplay: 'exceptZero' }
+    : { minimumFractionDigits: digits, maximumFractionDigits: digits };
+  return new Intl.NumberFormat(REPORT.locale, options).format(value);
+}
+
+function playgroundUrl(sql) {
+  return SITE + '/playground?sql=' + encodeURIComponent(sql.trim());
+}
+
+function renderHeader() {
+  document.documentElement.lang = REPORT.lang;
+  $('eyebrow').textContent = REPORT.eyebrow;
+  $('title').textContent = REPORT.title;
+  $('lede').textContent = REPORT.lede;
+  setMode('embedded', UI.embedded(REPORT.asOf));
+  $('refresh').hidden = !REPORT.live;
+}
+
+function setMode(mode, text) {
+  $('mode').dataset.mode = mode;
+  $('mode').textContent = text;
+}
+
+function renderKpis() {
+  $('kpis').innerHTML = REPORT.kpis.map((k) => {
+    const rows = figureById(k.from).rows;
+    return '<div class="kpi"><span class="kpi-label">' + esc(k.label) + '</span>' +
+      '<span class="kpi-value num">' + esc(fmt(k.value(rows), k)) + '</span>' +
+      '<span class="kpi-note">' + esc(k.note ? k.note(rows) : '') + '</span></div>';
+  }).join('');
+}
+
+function figureShell(f) {
+  const chips = (f.ranges || []).map((r, i) =>
+    '<button type="button" data-range="' + i + '" aria-pressed="' + (i === f.ranges.length - 1) + '">' + esc(r.label) + '</button>').join('');
+  return '<figure class="figure" id="fig-' + f.id + '">' +
+    '<div class="figure-head"><div><h2>' + esc(f.title) + '</h2>' +
+    (f.subtitle ? '<p class="figure-sub">' + esc(f.subtitle) + '</p>' : '') + '</div>' +
+    '<div class="figure-tools">' + (chips ? '<div class="chips" role="group">' + chips + '</div>' : '') +
+    '<details class="menu"><summary aria-haspopup="menu">' + UI.data + ' ▾</summary><div class="menu-list" role="menu">' +
+    '<div class="menu-sep">' + UI.query + '</div>' +
+    '<a role="menuitem" href="' + esc(playgroundUrl(f.sql)) + '" target="_blank" rel="noopener">' + UI.openQuery + '</a>' +
+    '<a role="menuitem" href="#" data-act="sql">' + UI.copySql + '</a>' +
+    '<div class="menu-sep" data-count></div>' +
+    '<a role="menuitem" href="#" data-act="csv">CSV</a>' +
+    '<a role="menuitem" href="#" data-act="json">JSON</a>' +
+    '</div></details></div></div>' +
+    (f.kind === 'table'
+      ? '<div class="table-wrap" data-body></div>'
+      : '<div class="chart" data-body role="img" aria-label="' + esc(f.title + '. ' + (f.caption || '')) + '"></div>') +
+    (f.caption ? '<figcaption>' + esc(f.caption) + '</figcaption>' : '') +
+    '</figure>';
+}
+
+const charts = new Map();
+
+function renderFigure(f) {
+  const el = $('fig-' + f.id);
+  el.querySelector('[data-count]').textContent = UI.download(f.rows.length);
+  const body = el.querySelector('[data-body]');
+  if (f.kind === 'table') {
+    body.innerHTML = tableHtml(f);
+    return;
+  }
+  const chart = charts.get(f.id) || echarts.init(body, null, { renderer: 'svg' });
+  charts.set(f.id, chart);
+  chart.setOption(f.kind === 'bar' ? barOption(f) : lineOption(f), true);
+}
+
+function visibleRows(f) {
+  const range = f.ranges && f.ranges[f.rangeIndex ?? f.ranges.length - 1];
+  return range && range.last ? f.rows.slice(-range.last) : f.rows;
+}
+
+function axisStyle() {
+  return {
+    axisLine: { lineStyle: { color: token('--border') } },
+    axisTick: { show: false },
+    axisLabel: { color: token('--text-muted'), fontSize: 11 },
+    splitLine: { lineStyle: { color: token('--grid'), type: 'solid' } },
+  };
+}
+
+function tooltipStyle() {
+  return {
+    backgroundColor: token('--surface-1'),
+    borderColor: token('--border'),
+    textStyle: { color: token('--text-primary'), fontSize: 12 },
+  };
+}
+
+function lineOption(f) {
+  const rows = visibleRows(f);
+  const many = f.series.length > 1;
+  return {
+    animation: false,
+    textStyle: { fontFamily: getComputedStyle(document.body).fontFamily },
+    grid: { left: 8, right: many ? 104 : 24, top: many ? 36 : 12, bottom: 8, containLabel: true },
+    legend: many ? { top: 0, left: 0, icon: 'roundRect', itemWidth: 12, itemHeight: 4, textStyle: { color: token('--text-secondary') } } : undefined,
+    tooltip: {
+      trigger: 'axis', ...tooltipStyle(),
+      axisPointer: { type: 'line', lineStyle: { color: token('--text-muted') } },
+      valueFormatter: (v) => fmt(v, f),
+    },
+    xAxis: { type: 'category', data: rows.map((r) => r[f.x]), boundaryGap: false, ...axisStyle(), splitLine: { show: false } },
+    yAxis: { type: 'value', scale: true, ...axisStyle(), axisLabel: { ...axisStyle().axisLabel, formatter: (v) => fmt(v, { digits: Math.min(f.digits ?? 0, 2) }) } },
+    series: f.series.map((s, i) => ({
+      name: s.label,
+      type: 'line',
+      data: rows.map((r) => r[s.key]),
+      showSymbol: false,
+      lineStyle: { width: 2 },
+      color: token('--series-' + (i + 1)),
+      emphasis: { focus: 'series' },
+      endLabel: many ? { show: true, color: token('--text-secondary'), fontSize: 11, formatter: (p) => s.label + ' ' + fmt(p.value, f) } : undefined,
+    })),
+  };
+}
+
+function barOption(f) {
+  const s = f.series[0];
+  const rows = [...visibleRows(f)].sort((a, b) => b[s.key] - a[s.key]);
+  return {
+    animation: false,
+    textStyle: { fontFamily: getComputedStyle(document.body).fontFamily },
+    grid: { left: 8, right: 56, top: 8, bottom: 8, containLabel: true },
+    tooltip: { trigger: 'item', ...tooltipStyle(), valueFormatter: (v) => fmt(v, f) },
+    xAxis: { type: 'value', ...axisStyle(), axisLabel: { ...axisStyle().axisLabel, formatter: (v) => fmt(v, { digits: 0 }) } },
+    yAxis: { type: 'category', inverse: true, data: rows.map((r) => r[f.x]), ...axisStyle(), splitLine: { show: false } },
+    series: [{
+      name: s.label,
+      type: 'bar',
+      data: rows.map((r) => r[s.key]),
+      barMaxWidth: 18,
+      color: token('--series-1'),
+      itemStyle: { borderRadius: [0, 4, 4, 0] },
+      label: { show: rows.length <= 15, position: 'right', color: token('--text-secondary'), fontSize: 11, formatter: (p) => fmt(p.value, f) },
+    }],
+  };
+}
+
+function tableHtml(f) {
+  const cols = f.columns || Object.keys(f.rows[0] || {}).map((key) => ({ key, label: key }));
+  const isNum = (c) => c.digits !== undefined || typeof f.rows[0]?.[c.key] === 'number';
+  return '<table><thead><tr>' + cols.map((c) => '<th class="' + (isNum(c) ? 'n' : '') + '" scope="col">' + esc(c.label) + '</th>').join('') + '</tr></thead><tbody>' +
+    f.rows.map((r) => '<tr>' + cols.map((c) => isNum(c)
+      ? '<td class="n">' + esc(fmt(r[c.key], c)) + '</td>'
+      : '<td>' + esc(r[c.key]) + '</td>').join('') + '</tr>').join('') +
+    '</tbody></table>';
+}
+
+function renderMethod() {
+  $('method-title').textContent = UI.methodTitle;
+  $('method-text').textContent = REPORT.method;
+  $('method-sql').innerHTML = REPORT.figures.map((f) =>
+    '<details class="sql"><summary>' + esc(UI.sqlFor(f.title)) + '</summary><pre>' + esc(f.sql.trim()) + '</pre></details>').join('');
+}
+
+function renderFooter() {
+  $('footer').innerHTML = REPORT.sources.map((s) =>
+    '<p><a href="' + esc(SITE + '/datasets/' + s.dataset) + '">' + esc(s.name) + '</a> · ' +
+    (s.licenseUrl ? '<a href="' + esc(s.licenseUrl) + '">' + esc(s.license) + '</a>' : esc(s.license)) +
+    ' · ' + esc(s.attribution) + '</p>').join('') +
+    '<p>' + esc(UI.footer(REPORT.asOf)) + '</p>';
+}
+
+function renderAll() {
+  renderKpis();
+  REPORT.figures.forEach(renderFigure);
+}
+
+/* ---- Data out: one menu per figure ---------------------------------------- */
+
+function toCsv(rows) {
+  if (!rows.length) return '';
+  const cols = Object.keys(rows[0]);
+  const cell = (v) => {
+    const t = v === null || v === undefined ? '' : String(v);
+    return /[",\r\n]|^\s|\s$/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
+  };
+  return [cols.join(','), ...rows.map((r) => cols.map((c) => cell(r[c])).join(','))].join('\r\n');
+}
+
+// A sandboxed viewer makes <a download> inert. Where the host offers a downloads
+// capability (a Claude artifact published with it), save through that instead.
+let saver = null;
+try { window.claude?.use?.('downloads')?.then((ns) => { saver = ns; }, () => {}); } catch { /* not a Claude viewer */ }
+const framed = window.self !== window.top;
+
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); return true; } catch { return false; }
+}
+
+async function saveFile(filename, text, type) {
+  const blob = new Blob([text], { type });
+  if (saver) return saver.save({ filename, data: blob });
+  if (framed) {
+    if (await copyText(text)) toast(UI.downloadBlocked);
+    return;
+  }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+function toast(text) {
+  const t = $('toast');
+  t.textContent = text;
+  t.dataset.show = '';
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => delete t.dataset.show, 2600);
+}
+
+document.addEventListener('click', async (event) => {
+  document.querySelectorAll('details.menu[open]').forEach((d) => { if (!d.contains(event.target)) d.open = false; });
+  const chip = event.target.closest('[data-range]');
+  if (chip) {
+    const f = figureById(chip.closest('.figure').id.slice(4));
+    f.rangeIndex = Number(chip.dataset.range);
+    chip.parentElement.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b === chip)));
+    renderFigure(f);
+    return;
+  }
+  const action = event.target.closest('[data-act]');
+  if (!action) return;
+  event.preventDefault();
+  const f = figureById(action.closest('.figure').id.slice(4));
+  action.closest('details').open = false;
+  if (action.dataset.act === 'sql') { if (await copyText(f.sql.trim())) toast(UI.copied); return; }
+  const stem = f.id + '-' + REPORT.asOf;
+  if (action.dataset.act === 'csv') await saveFile(stem + '.csv', toCsv(f.rows), 'text/csv');
+  if (action.dataset.act === 'json') await saveFile(stem + '.json', JSON.stringify(f.rows, null, 2), 'application/json');
+});
+
+document.addEventListener('keydown', (event) => {
+  if (event.key !== 'Escape') return;
+  document.querySelectorAll('details.menu[open]').forEach((d) => { d.open = false; d.querySelector('summary').focus(); });
+});
+
+/* ---- Live refresh: the same SQL, run in the reader's browser -------------- */
+
+let connection = null;
+
+async function connect() {
+  const duckdb = await import('https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@' + ENGINE.npm + '/+esm');
+  const worker = await duckdb.createWorker(ENGINE.base + ENGINE.worker);
+  const db = new duckdb.AsyncDuckDB(new duckdb.VoidLogger(), worker);
+  await db.instantiate(ENGINE.base + ENGINE.wasm);
+  const conn = await db.connect();
+  // This engine sends httpfs's If-Match header URL-encoded and the bucket answers 412;
+  // every file it reads is immutable, so the check guards nothing here.
+  await conn.query('SET GLOBAL unsafe_disable_etag_checks = true');
+  await conn.query("ATTACH 'ducklake:" + CATALOG + "' AS datadirectory (READ_ONLY)");
+  return conn;
+}
+
+// Arrow hands BIGINT back as a JS bigint; the page only ever needs plain numbers.
+const plain = (row) => Object.fromEntries(Object.entries(row).map(([k, v]) => [k, typeof v === 'bigint' ? Number(v) : v]));
+
+async function refresh() {
+  const button = $('refresh');
+  button.disabled = true;
+  setMode('embedded', UI.refreshing);
+  try {
+    connection ??= await connect();
+    for (const f of REPORT.figures) {
+      const result = await connection.query(f.sql);
+      f.rows = result.toArray().map((r) => plain(r.toJSON()));
+    }
+    renderAll();
+    setMode('live', UI.live(new Date().toLocaleString(REPORT.locale)));
+  } catch (error) {
+    // A blocked fetch surfaces as "Cannot open database … read-only mode", which reads like
+    // a missing file. Say what actually happened, and keep the embedded figures.
+    console.error(error);
+    setMode('error', UI.embedded(REPORT.asOf));
+    toast(UI.unreachable);
+  } finally {
+    button.disabled = false;
+  }
+}
+
+/* ---- Boot ----------------------------------------------------------------- */
+
+renderHeader();
+$('figures').innerHTML = REPORT.figures.map(figureShell).join('');
+renderAll();
+renderMethod();
+renderFooter();
+$('refresh').addEventListener('click', refresh);
+window.addEventListener('resize', () => charts.forEach((c) => c.resize()));
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => REPORT.figures.forEach(renderFigure));
+</script>
+</body>
+</html>
